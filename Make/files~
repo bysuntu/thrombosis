@@ -1,0 +1,3 @@
+whiteFoam.C
+
+EXE = $(FOAM_USR_APPBIN)/whiteFoam
