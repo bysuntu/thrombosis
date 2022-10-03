@@ -214,19 +214,33 @@ volScalarField M_at
     dimensionedScalar("M_at", dimensionSet(0, -2, 0, 0, 1, 0, 0), pTraits<scalar>::zero)
 };
 
-volScalarField Throm
+volScalarField faceThrom
 {
     IOobject
     (
-        "Throm",
+        "faceThrom",
         runTime.timeName(),
         mesh,
         IOobject::READ_IF_PRESENT,
         IOobject::AUTO_WRITE
     ),
     mesh,
-    dimensionedScalar("Throm", dimensionSet(0, 0, 0, 0, 1, 0, 0), pTraits<scalar>::zero)
+    dimensionedScalar("faceThrom", dimensionSet(0, 0, 0, 0, 1, 0, 0), pTraits<scalar>::zero)
 };
+
+volScalarField cellThrom
+{
+    IOobject
+    (
+        "cellThrom",
+        runTime.timeName(),
+        mesh,
+        IOobject::READ_IF_PRESENT,
+        IOobject::AUTO_WRITE
+    ),
+    mesh,
+    dimensionedScalar("cellThrom", dimensionSet(0, 0, 0, 0, 1, 0, 0), pTraits<scalar>::zero)
+}
 
 volScalarField Jr
 (

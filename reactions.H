@@ -83,12 +83,12 @@ forAll(mesh.C(), cI){
 
 // Mesh
 label wallId = mesh.boundaryMesh().findPatchID(wallName);
-const vectorField& wallCenter = mesh.boundary()[wallId].Cf();
+const vectorField& wallCenter = mesh.boundary()[wallId];
 const labelUList& faceCells = mesh.boundaryMesh()[wallId].faceCells();
 
 // scalars
 scalarField sr_Field =sr.boundaryField()[wallId];
-scalarField& Throm_Field = Throm.boundaryFieldRef()[wallId];
+scalarField& Throm_Field = faceThrom.boundaryFieldRef()[wallId];
 scalarField D_PLT_Field = E_D_PLT.boundaryField()[wallId];
 scalarField RPLT_Field = RPLT.boundaryField()[wallId];
 scalarField APLT_Field = APLT.boundaryField()[wallId];
@@ -117,6 +117,10 @@ scalarField& jtb_Field = Jtb.boundaryFieldRef()[wallId];
 std::queue<scalar> activeCellList;
 std::set<scalar> cacheSet;
 std::set<scalar>::iterator cacheIter;
+
+std::queue<scalar> activeCCList;
+std::set<scalar> cacheCCSet;
+std::set<scalar>>iterator ccIter;
 
 forAll(wallCenter, faceI){
     // vector faceCenter = wallCenter[faceI];
@@ -186,8 +190,7 @@ forAll(wallCenter, faceI){
     scalar annex = (jr_Field[faceI] + ja_Field[faceI]) * (1 + 0.48) * 8.2e-12 * runTime.deltaT().value();
     Throm_Field[faceI] += annex; // Accumulate distance value
     label faceOwner = faceCells[faceI];
-
-    scalar dis = mag(mesh.C()[faceOwner] - wallCenter[faceI]);
+    scalar dis = mag(mesh.C()[faceOwner] - wallCenter[faceI].Cf());
     // cell find the distance from the wall
 
     if (Throm_Field[faceI] - dis > 0)
@@ -195,6 +198,16 @@ forAll(wallCenter, faceI){
         Throm[faceOwner] = Throm_Field[faceI] - dis;
         activeCellList.push(faceOwner);
     }
+
+    // Annex cells based on volume
+    // density of cells per cm^3
+    scalar generation = Throm_Field[faceI] * wallCenter[faceI].magSf();
+    if (generation > mesh.V()[faceOwner])
+    {
+        cellThrom[faceOwner] = generation - mesh.V()[faceOwner];
+        activeCCList.push(faceOwner);
+    }
+
     
     if (faceI % 1000 == 0){
         /*
@@ -206,9 +219,7 @@ forAll(wallCenter, faceI){
         Info << faceI << "    jpr: " << jpr.value() << "         " << jpr_Field[faceI] << endl;
         Info << "dJr: " << jr.value() << "  " << runTime.deltaT().value() << endl;
         */
-
     }
-    
 }
 
 Info << "Face Owner: " << activeCellList.size() << endl;
@@ -248,6 +259,26 @@ while (activeCellList.size() > 0){
         }
     }
     // Info << "Next Round: " << activeCellList.size() << endl;
+}
+
+
+Info << "Face Owner: " << activeCCList.size() << endl;
+while (activeCCList.size()){
+    int num = activeCCList.size();
+    cacheCCSet.clear();
+    for (int ci_ = 0; ci_ < num; ci++){
+        scalar centerCellId = activeCCList.front();
+        activeCCList.pop();
+        scalar centerQ = cellThrom[centerCellId];
+
+        const labelUList& neighbours = mesh.cellCells()[centerCellId];
+        forAll(neighbours, cc_){
+            scalar curCellId = neighbours[cc_];
+            
+
+        }
+
+    }
 }
 
 // Info << "==========Build Matrix=========" << endl;
