@@ -240,7 +240,7 @@ volScalarField cellThrom
     ),
     mesh,
     dimensionedScalar("cellThrom", dimensionSet(0, 0, 0, 0, 1, 0, 0), pTraits<scalar>::zero)
-}
+};
 
 volScalarField Jr
 (

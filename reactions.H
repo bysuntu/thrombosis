@@ -83,12 +83,13 @@ forAll(mesh.C(), cI){
 
 // Mesh
 label wallId = mesh.boundaryMesh().findPatchID(wallName);
-const vectorField& wallCenter = mesh.boundary()[wallId];
+const vectorField& wallCenter = mesh.boundary()[wallId].Cf();
+const vectorField& wallArea = mesh.boundary()[wallId].Sf();
 const labelUList& faceCells = mesh.boundaryMesh()[wallId].faceCells();
 
 // scalars
 scalarField sr_Field =sr.boundaryField()[wallId];
-scalarField& Throm_Field = faceThrom.boundaryFieldRef()[wallId];
+scalarField& Throm_Field = cellThrom.boundaryFieldRef()[wallId];
 scalarField D_PLT_Field = E_D_PLT.boundaryField()[wallId];
 scalarField RPLT_Field = RPLT.boundaryField()[wallId];
 scalarField APLT_Field = APLT.boundaryField()[wallId];
@@ -120,7 +121,7 @@ std::set<scalar>::iterator cacheIter;
 
 std::queue<scalar> activeCCList;
 std::set<scalar> cacheCCSet;
-std::set<scalar>>iterator ccIter;
+std::set<scalar>:: iterator ccIter;
 
 forAll(wallCenter, faceI){
     // vector faceCenter = wallCenter[faceI];
@@ -180,7 +181,7 @@ forAll(wallCenter, faceI){
     mat_Field[faceI] = mat.value();
 
     jr_Field[faceI] = jr.value();// * runTime.deltaT().value();
-    ja_Field[faceI] = ja.value();// * runTime.deltaT().value();
+    ja_Field[faceI] = max(0, ja.value());// * runTime.deltaT().value();
     jpr_Field[faceI] = jpr.value();// * runTime.deltaT().value();
     jps_Field[faceI] = jps.value();// * runTime.deltaT().value();
     jpt_Field[faceI] = jpt.value();// * runTime.deltaT().value();
@@ -190,21 +191,21 @@ forAll(wallCenter, faceI){
     scalar annex = (jr_Field[faceI] + ja_Field[faceI]) * (1 + 0.48) * 8.2e-12 * runTime.deltaT().value();
     Throm_Field[faceI] += annex; // Accumulate distance value
     label faceOwner = faceCells[faceI];
-    scalar dis = mag(mesh.C()[faceOwner] - wallCenter[faceI].Cf());
+    scalar dis = mag(mesh.C()[faceOwner] - wallCenter[faceI]);
     // cell find the distance from the wall
 
     if (Throm_Field[faceI] - dis > 0)
     {
-        Throm[faceOwner] = Throm_Field[faceI] - dis;
+        cellThrom[faceOwner] = Throm_Field[faceI] - dis;
         activeCellList.push(faceOwner);
     }
-
+    
     // Annex cells based on volume
     // density of cells per cm^3
-    scalar generation = Throm_Field[faceI] * wallCenter[faceI].magSf();
+    scalar generation = Throm_Field[faceI] * mag(wallArea[faceI]);
     if (generation > mesh.V()[faceOwner])
     {
-        cellThrom[faceOwner] = generation - mesh.V()[faceOwner];
+        faceThrom[faceOwner] = generation - mesh.V()[faceOwner];
         activeCCList.push(faceOwner);
     }
 
@@ -220,6 +221,9 @@ forAll(wallCenter, faceI){
         Info << "dJr: " << jr.value() << "  " << runTime.deltaT().value() << endl;
         */
     }
+
+    // Ensure positive APLT value at the reactive surface
+
 }
 
 Info << "Face Owner: " << activeCellList.size() << endl;
@@ -229,7 +233,7 @@ while (activeCellList.size() > 0){
     for(int ci_ = 0; ci_ < num; ci_++){
         scalar centerCellId = activeCellList.front();
         activeCellList.pop();
-        scalar centerR = Throm[centerCellId];
+        scalar centerR = cellThrom[centerCellId];
         vector centerX = mesh.C()[centerCellId];
 
         const labelUList& neighbours = mesh.cellCells()[centerCellId];
@@ -240,9 +244,9 @@ while (activeCellList.size() > 0){
             // Info << "id: " << curCellId << " T: " << Throm[curCellId] << " X: " << cX << " dis: " << cR << endl;
             // Info << "centerR: " << centerR << " cR: " << cR << " Throm: " << Throm[curCellId] << endl;
 
-            if (centerR - cR > Throm[curCellId])
+            if (centerR - cR > cellThrom[curCellId])
             {
-                Throm[curCellId] = centerR - cR;
+                cellThrom[curCellId] = centerR - cR;
                 if (cacheSet.find(curCellId) == cacheSet.end())
                 {
                     activeCellList.push(curCellId);
@@ -261,7 +265,7 @@ while (activeCellList.size() > 0){
     // Info << "Next Round: " << activeCellList.size() << endl;
 }
 
-
+/*
 Info << "Face Owner: " << activeCCList.size() << endl;
 while (activeCCList.size()){
     int num = activeCCList.size();
@@ -280,6 +284,7 @@ while (activeCCList.size()){
 
     }
 }
+*/
 
 // Info << "==========Build Matrix=========" << endl;
 // SPECIES 
@@ -361,12 +366,16 @@ else
 
 }
 
+// Calculate gradient of APLT
+
+volVectorField apltFlux ("apltFlux", fvc::grad(APLT));
+
 // Update Velocity source term
 volScalarField nu = laminarTransport.nu();
 dimensionedScalar k_plug = Foam::pow(0.48, 3) / (36. * 5 * Foam::pow(1 - 0.48, 2)) * Foam::pow(2.5e-4, 2);
 
 forAll(mesh.C(), cI){
-    sU[cI] = (Throm[cI] > 0) * nu[cI] / k_plug.value();
+    sU[cI] = (cellThrom[cI] > 0) * nu[cI] / k_plug.value();
 }
 
 runTime.setDeltaT(dT);
@@ -377,4 +386,5 @@ if (runTime.outputTime())
         //Gamma.write();
         sr.write();
         E_D_PLT.write();
+        apltFlux.write();
     }
