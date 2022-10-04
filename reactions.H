@@ -188,7 +188,7 @@ forAll(wallCenter, faceI){
     jtb_Field[faceI] = jtb.value();// * runTime.deltaT().value();
 
     // Platelet plug growth model
-    scalar annex = (jr_Field[faceI] + ja_Field[faceI]) * (1 + 0.48) * 8.2e-6 * runTime.deltaT().value();
+    scalar annex = (jr_Field[faceI] + ja_Field[faceI]) * (1 + 0.48) * 8.2e-6 * runTime.deltaT().value(); // mPLT
     Throm_Field[faceI] += annex; // Accumulate distance value
     label faceOwner = faceCells[faceI];
     scalar dis = mag(mesh.C()[faceOwner] - wallCenter[faceI]);
