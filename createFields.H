@@ -66,7 +66,14 @@ dimensionedScalar k_as(transportProperties.lookup("k_as")); // reaction rate cm 
 dimensionedScalar k_rs(transportProperties.lookup("k_rs")); // reaction rate cm / s. resting platelets and the surface.
 dimensionedScalar k_aa(transportProperties.lookup("k_aa")); // reaction rate cm / s. depositng and surface-bound activated platelets.
 
-dimensionedScalar t_act("t_act", dimensionSet(0, 0, 1, 0, 0, 0, 0), 1.);
+// dimensionedScalar t_act("t_act", dimensionSet(0, 0, 1, 0, 0, 0, 0), 1.); // characteristic reaction time
+dimensionedScalar t_act(transportProperties.lookup("t_act"));
+
+dimensionedScalar v_plt(transportProperties.lookup("v_plt")); // volume of a platelet 8.2e-12 cm3
+dimensionedScalar r_plt(transportProperties.lookup("r_plt")); // radius of a platelet 2.5e-4 cm
+
+// dimensionedScalar ampPlt("ampPlt", dimensionSet(0, 0, 0, 0, 0, 0, 0), 1.0e6);
+dimensionedScalar ampPlt(transportProperties.lookup("ampPlt")); // millon platelet
 
 volScalarField RPLT
 (

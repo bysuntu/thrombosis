@@ -187,8 +187,11 @@ forAll(wallCenter, faceI){
     jpt_Field[faceI] = jpt.value();// * runTime.deltaT().value();
     jtb_Field[faceI] = jtb.value();// * runTime.deltaT().value();
 
+    // Platelet embolization model
+    //scalar F_emb = exp(-0.0095 * E_D_PLT[faceCells[faceI]] * sr_Field[faceI]);
+
     // Platelet plug growth model
-    scalar annex = (jr_Field[faceI] + ja_Field[faceI]) * (1 + 0.48) * 8.2e-6 * runTime.deltaT().value(); // mPLT
+    scalar annex = (jr_Field[faceI] + ja_Field[faceI]) * (1 + 0.48) * v_plt.value() * runTime.deltaT().value() * ampPlt.value(); // mPLT
     Throm_Field[faceI] += annex; // Accumulate distance value
     label faceOwner = faceCells[faceI];
     scalar dis = mag(mesh.C()[faceOwner] - wallCenter[faceI]);
@@ -368,11 +371,11 @@ else
 
 // Calculate gradient of APLT
 
-volVectorField apltFlux ("apltFlux", fvc::grad(APLT));
+//volVectorField apltFlux ("apltFlux", fvc::grad(APLT));
 
 // Update Velocity source term
 volScalarField nu = laminarTransport.nu();
-dimensionedScalar k_plug = Foam::pow(0.48, 3) / (36. * 5 * Foam::pow(1 - 0.48, 2)) * Foam::pow(2.5e-4, 2);
+dimensionedScalar k_plug = Foam::pow(0.48, 3) / (36. * 5 * Foam::pow(1 - 0.48, 2)) * Foam::pow(r_plt, 2);
 
 forAll(mesh.C(), cI){
     sU[cI] = (cellThrom[cI] > 0) * nu[cI] / k_plug.value();
@@ -385,6 +388,6 @@ if (runTime.outputTime())
         k_PA.write();
         //Gamma.write();
         sr.write();
-        E_D_PLT.write();
-        apltFlux.write();
+        //E_D_PLT.write();
+        //apltFlux.write();
     }
