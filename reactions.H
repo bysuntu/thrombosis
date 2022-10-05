@@ -268,12 +268,12 @@ while (activeCellList.size() > 0){
     // Info << "Next Round: " << activeCellList.size() << endl;
 }
 
-/*
+
 Info << "Face Owner: " << activeCCList.size() << endl;
 while (activeCCList.size()){
     int num = activeCCList.size();
     cacheCCSet.clear();
-    for (int ci_ = 0; ci_ < num; ci++){
+    for (int ci_ = 0; ci_ < num; ci_++){
         scalar centerCellId = activeCCList.front();
         activeCCList.pop();
         scalar centerQ = cellThrom[centerCellId];
@@ -287,7 +287,7 @@ while (activeCCList.size()){
 
     }
 }
-*/
+
 
 // Info << "==========Build Matrix=========" << endl;
 // SPECIES 
@@ -380,6 +380,8 @@ dimensionedScalar k_plug = Foam::pow(0.48, 3) / (36. * 5 * Foam::pow(1 - 0.48, 2
 forAll(mesh.C(), cI){
     sU[cI] = (cellThrom[cI] > 0) * nu[cI] / k_plug.value();
 }
+
+
 
 runTime.setDeltaT(dT);
 
