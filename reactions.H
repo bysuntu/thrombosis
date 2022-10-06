@@ -205,27 +205,12 @@ forAll(wallCenter, faceI){
     
     // Annex cells based on volume
     // density of cells per cm^3
-    scalar generation = Throm_Field[faceI] * mag(wallArea[faceI]);
+    scalar generation = annex * mag(wallArea[faceI]);
     if (generation > mesh.V()[faceOwner])
     {
         faceThrom[faceOwner] = generation - mesh.V()[faceOwner];
         activeCCList.push(faceOwner);
     }
-
-    
-    if (faceI % 1000 == 0){
-        /*
-        Info << "face center: " << wallCenter[faceI] << endl;
-        Info << "cell center: " << mesh.C()[faceOwner] << endl;
-        Info << "dis: " << dis << endl;
-        Info << "sr: " << sr_Field[faceI] << endl;
-        Info << "krs: " << k_rs << " RP: " << D_PLT_Field[faceI] << " S: " << s << endl;
-        Info << faceI << "    jpr: " << jpr.value() << "         " << jpr_Field[faceI] << endl;
-        Info << "dJr: " << jr.value() << "  " << runTime.deltaT().value() << endl;
-        */
-    }
-
-    // Ensure positive APLT value at the reactive surface
 
 }
 
@@ -293,27 +278,35 @@ while (activeCCList.size()){
         */
        const labelUList& neighbourFaces = mesh.cells()[centerCellId];
        scalar totalArea = 0;
-       labelUList activeFaceList;
+       std::list<std::pair<scalar, scalar>> activeFaces;
        forAll(neighbourFaces, ff_){
-            scalar curFaceId = neighbourFaces[ff_];
-            scalar left_ = mesh.owner()[curFaceId];
-            scalar right_ = mesh.neighbour()[curFaceId];
+            scalar faceId_ = neighbourFaces[ff_];
+            scalar left_ = mesh.owner()[faceId_];
+            scalar right_ = mesh.neighbour()[faceId_];
             Info << "left: " << left_ << " " << right_ << " " << centerCellId << endl;
-            scalar area_ = mesh.magSf()[curFaceId];
-            scalar curCellId = (curFaceId == left_)? left_ : right_;
-            scalar curThromV = cellThrom[curCellId];
-            scalar curMeshV = mesh.V()[curCellId];
-            scalar curDensity = curThromV / curMeshV;
+            scalar area_ = mesh.magSf()[faceId_];
+            scalar cellId_ = (faceId_ == left_)? left_ : right_;
+            scalar thromV_ = cellThrom[cellId_];
+            scalar meshV_ = mesh.V()[cellId_];
+            scalar density_ = thromV_ / meshV_;
 
-            if (curDensity < centerDensity)
+            if ((density_ < centerDensity) && (meshV_ > 0))
             {
                 totalArea += area_;
+                activeFaces.push_back({cellId_, area_});
             }
         
         }
 
-        forAll(neighbourFaces, ff_){
-            scalar
+        for(auto ff_ = activeFaces.begin(); ff_ != activeFaces.end();ff_++){
+            scalar cellId_ = ff_->first;
+            scalar frac_ = ff_->second / totalArea;
+            cellThrom[cellId_] += (cellThrom[centerCellId] - mesh.V()[centerCellId]) * frac_;
+            if ((cellThrom[cellId_] > mesh.V()[cellId_]) && (cacheCCSet.find(cellId_) == cacheCCSet.end()))
+            {
+                activeCCList.push(cellId_);
+                cacheCCSet.insert(cellId_);
+            }
         }
         
 

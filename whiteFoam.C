@@ -43,6 +43,8 @@ Description
 #include "fvcSmooth.H"
 #include <queue>
 #include <set>
+#include <utility>
+#include <list>
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
