@@ -268,6 +268,8 @@ while (activeCellList.size() > 0){
     // Info << "Next Round: " << activeCellList.size() << endl;
 }
 
+const labelUList& owner = mesh.owner();
+const labelUList& neighbour = mesh.neighbour();
 
 Info << "Face Owner: " << activeCCList.size() << endl;
 while (activeCCList.size()){
@@ -277,13 +279,45 @@ while (activeCCList.size()){
         scalar centerCellId = activeCCList.front();
         activeCCList.pop();
         scalar centerQ = cellThrom[centerCellId];
-
+        scalar centerV = mesh.V()[centerCellId];
+        scalar centerDensity = centerQ / centerV;
+        Info << "Cell Id: " << centerCellId << endl;
+        /*
         const labelUList& neighbours = mesh.cellCells()[centerCellId];
         forAll(neighbours, cc_){
             scalar curCellId = neighbours[cc_];
-            
-
+            scalar curCellV = mesh.V()[curCellId];
+            scalar thromV = cellThrom[curCellId];
+            scalar pos = owner
         }
+        */
+       const labelUList& neighbourFaces = mesh.cells()[centerCellId];
+       scalar totalArea = 0;
+       labelUList activeFaceList;
+       forAll(neighbourFaces, ff_){
+            scalar curFaceId = neighbourFaces[ff_];
+            scalar left_ = mesh.owner()[curFaceId];
+            scalar right_ = mesh.neighbour()[curFaceId];
+            Info << "left: " << left_ << " " << right_ << " " << centerCellId << endl;
+            scalar area_ = mesh.magSf()[curFaceId];
+            scalar curCellId = (curFaceId == left_)? left_ : right_;
+            scalar curThromV = cellThrom[curCellId];
+            scalar curMeshV = mesh.V()[curCellId];
+            scalar curDensity = curThromV / curMeshV;
+
+            if (curDensity < centerDensity)
+            {
+                totalArea += area_;
+            }
+        
+        }
+
+        forAll(neighbourFaces, ff_){
+            scalar
+        }
+        
+
+
 
     }
 }
@@ -360,7 +394,8 @@ else
         fvScalarMatrix ATIEqn //=== unit: muM (nmol / ml) === //
         (
             fvm::ddt(ATI) + fvm::div(phi, ATI) - fvm::laplacian(E_D_ATI, ATI)
-            == -k2 * ATI * beta * TB
+            // == -k2 * ATI * beta * TB
+            == -fvm::Sp(k2 * beta * TB, ATI)
         );
 
         TBEqn.solve();
