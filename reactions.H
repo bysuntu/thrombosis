@@ -263,30 +263,22 @@ while (activeCCList.size()){
     for (int ci_ = 0; ci_ < num; ci_++){
         scalar centerCellId = activeCCList.front();
         activeCCList.pop();
-        scalar centerQ = cellThrom[centerCellId];
+        scalar centerQ = faceThrom[centerCellId];
         scalar centerV = mesh.V()[centerCellId];
         scalar centerDensity = centerQ / centerV;
         Info << "Cell Id: " << centerCellId << endl;
-        /*
-        const labelUList& neighbours = mesh.cellCells()[centerCellId];
-        forAll(neighbours, cc_){
-            scalar curCellId = neighbours[cc_];
-            scalar curCellV = mesh.V()[curCellId];
-            scalar thromV = cellThrom[curCellId];
-            scalar pos = owner
-        }
-        */
-       const labelUList& neighbourFaces = mesh.cells()[centerCellId];
-       scalar totalArea = 0;
-       std::list<std::pair<scalar, scalar>> activeFaces;
-       forAll(neighbourFaces, ff_){
+
+        const labelUList& neighbourFaces = mesh.cells()[centerCellId];
+        scalar totalArea = 0;
+        std::list<std::pair<scalar, scalar>> activeFaces;
+        forAll(neighbourFaces, ff_){
             scalar faceId_ = neighbourFaces[ff_];
             scalar left_ = mesh.owner()[faceId_];
             scalar right_ = mesh.neighbour()[faceId_];
             Info << "left: " << left_ << " " << right_ << " " << centerCellId << endl;
             scalar area_ = mesh.magSf()[faceId_];
             scalar cellId_ = (faceId_ == left_)? left_ : right_;
-            scalar thromV_ = cellThrom[cellId_];
+            scalar thromV_ = faceThrom[cellId_];
             scalar meshV_ = mesh.V()[cellId_];
             scalar density_ = thromV_ / meshV_;
 
@@ -301,17 +293,13 @@ while (activeCCList.size()){
         for(auto ff_ = activeFaces.begin(); ff_ != activeFaces.end();ff_++){
             scalar cellId_ = ff_->first;
             scalar frac_ = ff_->second / totalArea;
-            cellThrom[cellId_] += (cellThrom[centerCellId] - mesh.V()[centerCellId]) * frac_;
-            if ((cellThrom[cellId_] > mesh.V()[cellId_]) && (cacheCCSet.find(cellId_) == cacheCCSet.end()))
+            faceThrom[cellId_] += (faceThrom[centerCellId] - mesh.V()[centerCellId]) * frac_;
+            if ((faceThrom[cellId_] > mesh.V()[cellId_]) && (cacheCCSet.find(cellId_) == cacheCCSet.end()))
             {
                 activeCCList.push(cellId_);
                 cacheCCSet.insert(cellId_);
             }
         }
-        
-
-
-
     }
 }
 
