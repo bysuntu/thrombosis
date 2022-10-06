@@ -206,9 +206,10 @@ forAll(wallCenter, faceI){
     // Annex cells based on volume
     // density of cells per cm^3
     scalar generation = annex * mag(wallArea[faceI]);
-    if (generation > mesh.V()[faceOwner])
+    faceThrom[faceOwner] += generation;
+    if (faceThrom[faceOwner] > mesh.V()[faceOwner])
     {
-        faceThrom[faceOwner] = generation - mesh.V()[faceOwner];
+        // faceThrom[faceOwner] = generation - mesh.V()[faceOwner];
         activeCCList.push(faceOwner);
     }
 
