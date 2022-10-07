@@ -260,7 +260,7 @@ while (activeCCList.size()){
             scalar faceId_ = neighbourFaces[ff_];
             scalar left_ = mesh.owner()[faceId_];
             scalar right_ = mesh.neighbour()[faceId_];
-            Info << "left: " << left_ << " " << right_ << " " << centerCellId << endl;
+            //Info << "left: " << left_ << " " << right_ << " " << centerCellId << endl;
             scalar area_ = mesh.magSf()[faceId_];
             scalar cellId_ = (faceId_ == left_)? left_ : right_;
             scalar thromV_ = faceThrom[cellId_];
