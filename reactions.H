@@ -69,18 +69,6 @@ for (int loop = 0; loop < loopNum; loop++)
 // ================================ //
 //Info << "Calculation of Coeff D Done" << endl;
 
-/*
-// Calculate the concentration of agonist
-forAll(mesh.C(), cI){
-    dimensionedScalar v = (ADP[cI] / C_ADP + TXA2[cI] / C_TXA2 + TB[cI] / C_TB) * cUnit;
-    
-    if (v.value() < 0)
-        v.value() = 0;
-
-    k_PA[cI] = v.value() * (v.value() >= 1) / t_act.value();
-}
-*/
-
 // Mesh
 label wallId = mesh.boundaryMesh().findPatchID(wallName);
 const vectorField& wallCenter = mesh.boundary()[wallId].Cf();
@@ -88,7 +76,7 @@ const vectorField& wallArea = mesh.boundary()[wallId].Sf();
 const labelUList& faceCells = mesh.boundaryMesh()[wallId].faceCells();
 
 // scalars
-scalarField sr_Field =sr.boundaryField()[wallId];
+scalarField sr_Field = sr.boundaryField()[wallId];
 scalarField& Throm_Field = cellThrom.boundaryFieldRef()[wallId];
 scalarField D_PLT_Field = E_D_PLT.boundaryField()[wallId];
 scalarField RPLT_Field = RPLT.boundaryField()[wallId];
@@ -148,16 +136,6 @@ forAll(wallCenter, faceI){
     dimensionedScalar jpt = beta * (mat_Field[faceI] * phi_APLT + mr_Field[faceI] * phi_RPLT) * PT_Field[faceI] * mUnit * cUnit;
     dimensionedScalar jtb = -(mat_Field[faceI] * phi_APLT + mr_Field[faceI] * phi_RPLT) * PT_Field[faceI] * mUnit * cUnit;
 
-    if (faceI % 1000 == 0)
-        {
-            Info << "jr: " << jr << endl;
-            Info << "ja: " << ja << endl;
-            Info << "jpr: " << jpr << endl;
-            Info << "jps: " << jps << endl;
-            Info << "jpt: " << jpt << endl;
-            Info << "jtb: " << jtb << endl;
-        }
-
     dimensionedScalar dm = jr + k_as * s * APLT_Field[faceI] * cUnit;
     //dimensionedScalar dm = jr_Field[faceI] * jUnit + k_as * s * APLT_Field[faceI] * cUnit;
     dimensionedScalar m = m_Field[faceI] *mUnit + dm * runTime.deltaT(); // Eq 12
@@ -215,7 +193,7 @@ forAll(wallCenter, faceI){
         // faceThrom[faceOwner] = generation - mesh.V()[faceOwner];
         activeCCList.push(faceOwner);
     }
-
+    Info << "faceThrom: " << faceThrom[faceOwner] << endl;
 }
 
 Info << "Face Owner: " << activeCellList.size() << endl;
