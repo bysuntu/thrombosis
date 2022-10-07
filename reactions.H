@@ -77,7 +77,9 @@ const labelUList& faceCells = mesh.boundaryMesh()[wallId].faceCells();
 
 // scalars
 scalarField sr_Field = sr.boundaryField()[wallId];
-scalarField& Throm_Field = cellThrom.boundaryFieldRef()[wallId];
+scalarField& cThrom_Field = cellThrom.boundaryFieldRef()[wallId];
+scalarField& fThrom_Field = faceThrom.boundaryFieldRef()[wallId];
+
 scalarField D_PLT_Field = E_D_PLT.boundaryField()[wallId];
 scalarField RPLT_Field = RPLT.boundaryField()[wallId];
 scalarField APLT_Field = APLT.boundaryField()[wallId];
@@ -170,14 +172,14 @@ forAll(wallCenter, faceI){
 
     // Platelet plug growth model
     scalar annex = (jr_Field[faceI] + ja_Field[faceI]) * (1 + 0.48) * v_plt.value() * runTime.deltaT().value() * ampPlt.value(); // mPLT
-    Throm_Field[faceI] += annex; // Accumulate distance value
+    cThrom_Field[faceI] += annex; // Accumulate distance value
     label faceOwner = faceCells[faceI];
     scalar dis = mag(mesh.C()[faceOwner] - wallCenter[faceI]);
     // cell find the distance from the wall
 
-    if (Throm_Field[faceI] - dis > 0)
+    if (cThrom_Field[faceI] - dis > 0)
     {
-        cellThrom[faceOwner] = Throm_Field[faceI] - dis;
+        cellThrom[faceOwner] = cThrom_Field[faceI] - dis;
         activeCellList.push(faceOwner);
     }
     
@@ -186,8 +188,9 @@ forAll(wallCenter, faceI){
     scalar generation = annex * mag(wallArea[faceI]);
     Info << faceI << " " << faceOwner << " " << generation << endl;
     Info << "face area: " << mag(wallArea[faceI]) << " cell v: " << mesh.V()[faceOwner] << endl;
-    Info << "sum: " << (Throm_Field[faceI] * mag(wallArea[faceI])) << endl;
+    Info << "sum: " << (cThrom_Field[faceI] * mag(wallArea[faceI])) << endl;
     faceThrom[faceOwner] += generation;
+    fThrom_Field[faceI] += generation;
     if (faceThrom[faceOwner] > mesh.V()[faceOwner])
     {
         // faceThrom[faceOwner] = generation - mesh.V()[faceOwner];
