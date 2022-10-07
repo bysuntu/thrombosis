@@ -208,6 +208,7 @@ forAll(wallCenter, faceI){
     scalar generation = annex * mag(wallArea[faceI]);
     Info << faceI << " " << faceOwner << " " << generation << endl;
     Info << "face area: " << mag(wallArea[faceI]) << " cell v: " << mesh.V()[faceOwner] << endl;
+    Info << "sum: " << (Throm_Field[faceI] * mag(wallArea[faceI])) << endl;
     faceThrom[faceOwner] += generation;
     if (faceThrom[faceOwner] > mesh.V()[faceOwner])
     {
