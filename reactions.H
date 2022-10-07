@@ -63,6 +63,17 @@ volScalarField k_PA
 
 scalar dT = runTime.deltaT().value();
 runTime.setDeltaT(pseudoDt);
+
+
+dimensionedScalar chemRate("chemRate", kUnit.dimensions(), 5);
+dimensionedScalar refPLT("refPLT", APLT.dimensions(), 70);
+
+forAll(sThrom.internalField(), c_)
+{
+    sThrom[c_] = (faceThrom[c_] > refPLT.value() * 0.5)? 1 : 0;
+}
+
+
 for (int loop = 0; loop < loopNum; loop++)
 {
 
@@ -103,6 +114,10 @@ scalarField& jpr_Field = Jpr.boundaryFieldRef()[wallId];
 scalarField& jps_Field = Jps.boundaryFieldRef()[wallId];
 scalarField& jpt_Field = Jpt.boundaryFieldRef()[wallId];
 scalarField& jtb_Field = Jtb.boundaryFieldRef()[wallId];
+
+
+scalarField& reaction_Field = sThrom.boundaryFieldRef()[wallId];
+
 
 // Info << "========Boundary==========" << endl;
 std::queue<scalar> activeCellList;
@@ -182,6 +197,10 @@ forAll(wallCenter, faceI){
         cellThrom[faceOwner] = cThrom_Field[faceI] - dis;
         activeCellList.push(faceOwner);
     }
+
+    // active Throm reaction
+    sThrom[faceOwner] = 1;
+    reaction_Field[faceI] = 1;
     
     // Annex cells based on volume
     // density of cells per cm^3
@@ -237,7 +256,7 @@ while (activeCellList.size() > 0){
     }
     // Info << "Next Round: " << activeCellList.size() << endl;
 }
-
+/*
 const labelUList& owner = mesh.owner();
 const labelUList& neighbour = mesh.neighbour();
 
@@ -251,33 +270,39 @@ while (activeCCList.size()){
         scalar centerQ = faceThrom[centerCellId];
         scalar centerV = mesh.V()[centerCellId];
         scalar centerDensity = centerQ / centerV;
-        Info << "Cell Id: " << centerCellId << endl;
 
         const labelUList& neighbourFaces = mesh.cells()[centerCellId];
         scalar totalArea = 0;
         std::list<std::pair<scalar, scalar>> activeFaces;
         forAll(neighbourFaces, ff_){
             scalar faceId_ = neighbourFaces[ff_];
+            if (!mesh.isInternalFace(faceId_))
+                continue;
             scalar left_ = mesh.owner()[faceId_];
             scalar right_ = mesh.neighbour()[faceId_];
-            //Info << "left: " << left_ << " " << right_ << " " << centerCellId << endl;
+
+            if (max(left_, right_) >= mesh.nCells())
+            continue;
             scalar area_ = mesh.magSf()[faceId_];
-            scalar cellId_ = (faceId_ == left_)? left_ : right_;
+            scalar cellId_ = (centerCellId == right_)? left_ : right_;
             scalar thromV_ = faceThrom[cellId_];
             scalar meshV_ = mesh.V()[cellId_];
+
+            // Info << "center: " << centerCellId << "neighbour: " << cellId_ << endl;
             scalar density_ = thromV_ / meshV_;
 
-            if ((density_ < centerDensity) && (meshV_ > 0))
+            if (density_ < centerDensity)
             {
                 totalArea += area_;
+		        // Info << "cellId_ " << cellId_ << "  " << area_ << endl;
                 activeFaces.push_back({cellId_, area_});
             }
-        
         }
-
+        // Info << "Total Area: " << totalArea << endl;
         for(auto ff_ = activeFaces.begin(); ff_ != activeFaces.end();ff_++){
             scalar cellId_ = ff_->first;
             scalar frac_ = ff_->second / totalArea;
+            // Info << "cellId: " << cellId_ << "  " << ff_->second << "  " << frac_ << endl;
             faceThrom[cellId_] += (faceThrom[centerCellId] - mesh.V()[centerCellId]) * frac_;
             if ((faceThrom[cellId_] > mesh.V()[cellId_]) && (cacheCCSet.find(cellId_) == cacheCCSet.end()))
             {
@@ -286,8 +311,9 @@ while (activeCCList.size()){
             }
         }
     }
+    Info << "Next round number: " << activeCCList.size() << endl;
 }
-
+*/
 
 // Info << "==========Build Matrix=========" << endl;
 // SPECIES 
@@ -370,7 +396,14 @@ else
 
 }
 
-// Calculate gradient of APLT
+// Calculate the concentration of clot
+
+fvScalarMatrix faceThromEqn
+(
+    fvm::ddt(faceThrom) - fvm::laplacian(E_D_PLT * 0.001 * faceThrom / refPLT, faceThrom)
+    == (refPLT - faceThrom) * sThrom * chemRate * (APLT / refPLT)
+);
+faceThromEqn.solve();
 
 //volVectorField apltFlux ("apltFlux", fvc::grad(APLT));
 

@@ -235,6 +235,20 @@ volScalarField faceThrom
     dimensionedScalar("faceThrom", dimensionSet(0, 0, 0, 0, 1, 0, 0), pTraits<scalar>::zero)
 };
 
+volScalarField sThrom
+(
+    IOobject
+    (
+        "sThrom",
+        runTime.timeName(),
+        mesh,
+        IOobject::NO_READ,
+        IOobject::NO_WRITE
+    ),
+    mesh,
+    dimensionedScalar("sThrom", dimensionSet(0, 0, 0, 0, 0, 0, 0), pTraits<scalar>::zero)
+);
+
 volScalarField cellThrom
 {
     IOobject
@@ -353,8 +367,14 @@ dimensionedScalar dUnit("dUnit", D_PLT.dimensions(), 1.);
 dimensionedScalar mUnit("mUnit", M.dimensions(), 1.);
 dimensionedScalar jUnit("jUnit", Jr.dimensions(), 1.);
 dimensionedScalar kUnit("kUnit", dimensionSet(0, 0, -1, 0, 0, 0, 0), 1.);
-
-
+/*
+set<scalar> internalCells;
+forAll(mesh.internalField(), c_){
+    Info << c_;
+    internalCells.insert(c_);
+}
+Info << "end" << endl;
+*/
 #include "createRDeltaT.H"
 
 Info<< "Reading field p\n" << endl;
