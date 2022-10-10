@@ -65,17 +65,14 @@ scalar dT = runTime.deltaT().value();
 runTime.setDeltaT(pseudoDt);
 
 
-dimensionedScalar chemRate("chemRate", kUnit.dimensions(), 5);
+dimensionedScalar chemRate("chemRate", kUnit.dimensions(), 10);
 dimensionedScalar refPLT("refPLT", APLT.dimensions(), 70);
 
 forAll(sThrom.internalField(), c_)
 {
-    sThrom[c_] = (faceThrom[c_] > refPLT.value() * 0.5)? 1 : 0;
+    sThrom[c_] = (faceThrom[c_] > refPLT.value() * 0.2)? 1 : 0;
 }
 
-
-for (int loop = 0; loop < loopNum; loop++)
-{
 
 // ================================ //
 //Info << "Calculation of Coeff D Done" << endl;
@@ -118,7 +115,11 @@ scalarField& jtb_Field = Jtb.boundaryFieldRef()[wallId];
 
 scalarField& reaction_Field = sThrom.boundaryFieldRef()[wallId];
 
+for (int loop = 0; loop < loopNum; loop++)
+{
 
+
+/*
 // Info << "========Boundary==========" << endl;
 std::queue<scalar> activeCellList;
 std::set<scalar> cacheSet;
@@ -134,11 +135,7 @@ forAll(wallCenter, faceI){
     dimensionedScalar k_pa = kpa_Field[faceI] * kUnit * (kpa_Field[faceI] >= 1);
     
     // values are given
-    /* 
-    dimensionedScalar k_as = Sh * D_PLT_Field[faceI] / cL * dUnit;
-    dimensionedScalar k_rs = Sh * D_PLT_Field[faceI] / cL * dUnit;
-    dimensionedScalar k_aa = Sh * D_PLT_Field[faceI] / cL * dUnit;
-    */
+
     // surface coverage between 0 and 1
     // dimensionedScalar s = 1. - m_Field[faceI] / M_inf * mUnit; // Eq 11
     
@@ -245,17 +242,12 @@ while (activeCellList.size() > 0){
                     cacheSet.insert(curCellId);
                 }
             }
-            /*
-            if ((cacheSet.find(curCellId) == cacheSet.end()) && Throm[curCellId] > 0)
-            {
-                activeCellList.push(curCellId);
-                cacheSet.insert(curCellId);
-            }
-            */
+
         }
     }
     // Info << "Next Round: " << activeCellList.size() << endl;
 }
+*/
 /*
 const labelUList& owner = mesh.owner();
 const labelUList& neighbour = mesh.neighbour();
@@ -316,6 +308,15 @@ while (activeCCList.size()){
 */
 
 // Info << "==========Build Matrix=========" << endl;
+
+forAll(mesh.C(), cI){
+  //sU[cI] = (cellThrom[cI] > 0) * nu[cI] / k_plug.value();
+    // sU[cI] = (faceThrom[cI] > 0.9 * refPLT.value()) * nu[cI] / k_plug.value();
+    scalar curFaceThrom = min(faceThrom[cI], refPLT.value());
+    scalar curValue = (curFaceThrom - refPLT.value() * 0.5) * (refPLT.value() - curFaceThrom);
+    k_PA[cI] = (faceThrom[cI] >= 0.5 * refPLT.value())? 40. * curValue : 0;
+}
+
 // SPECIES 
 //Info << "Build RPLT" << endl;
 fvScalarMatrix RPLTEqn // === unit: PLT / ml === //
@@ -394,26 +395,37 @@ else
         ATIEqn.solve();
     }
 
-}
 
 // Calculate the concentration of clot
 
 fvScalarMatrix faceThromEqn
 (
-    fvm::ddt(faceThrom) - fvm::laplacian(E_D_PLT * 0.001 * faceThrom / refPLT, faceThrom)
-    == (refPLT - faceThrom) * sThrom * chemRate * (APLT / refPLT)
+    fvm::ddt(faceThrom) 
+	// + fvm::div(phi * k_aa.value() * 0.001, faceThrom)
+	// + fvm::div(fvc::flux(U * sU / kUnit), faceThrom)
+	- fvm::laplacian(E_D_PLT * faceThrom / refPLT, faceThrom)
+    == (refPLT - faceThrom) * sThrom * chemRate * (APLT / refPLT)// + fvc::grad(faceThrom) & 
+// - sr * cUnit// - fvc::div(fvc::snGrad(p) * mesh.magSf()/ kUnit, faceThrom) * 0.000001
 );
 faceThromEqn.solve();
 
-//volVectorField apltFlux ("apltFlux", fvc::grad(APLT));
+forAll(wallCenter, faceI){
+    label faceOwner = faceCells[faceI];
+    faceThrom[faceOwner] = refPLT.value();
+}
 
 // Update Velocity source term
 volScalarField nu = laminarTransport.nu();
 dimensionedScalar k_plug = Foam::pow(0.48, 3) / (36. * 5 * Foam::pow(1 - 0.48, 2)) * Foam::pow(r_plt, 2);
 
 forAll(mesh.C(), cI){
-    sU[cI] = (cellThrom[cI] > 0) * nu[cI] / k_plug.value();
+  //sU[cI] = (cellThrom[cI] > 0) * nu[cI] / k_plug.value();
+    sU[cI] = (faceThrom[cI] > 0.9 * refPLT.value()) * nu[cI] / k_plug.value();
 }
+
+
+}
+
 
 
 
@@ -424,6 +436,6 @@ if (runTime.outputTime())
         k_PA.write();
         //Gamma.write();
         sr.write();
-        //E_D_PLT.write();
+        E_D_PLT.write();
         //apltFlux.write();
     }

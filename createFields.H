@@ -361,6 +361,20 @@ volScalarField sU
     mesh
 );
 
+volScalarField sPLT 
+(
+    IOobject
+    (
+        "sPLT",
+        runTime.timeName(),
+        mesh,
+        IOobject::NO_READ,
+        IOobject::AUTO_WRITE
+    ),
+    mesh,
+dimensionedScalar("sPLT", dimensionSet(0, 0, -1, 0, 0, 0, 0), pTraits<scalar>::zero)
+);
+
 
 dimensionedScalar cUnit("cUnit", ADP.dimensions(), 1.);
 dimensionedScalar dUnit("dUnit", D_PLT.dimensions(), 1.);
