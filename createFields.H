@@ -75,6 +75,11 @@ dimensionedScalar r_plt(transportProperties.lookup("r_plt")); // radius of a pla
 // dimensionedScalar ampPlt("ampPlt", dimensionSet(0, 0, 0, 0, 0, 0, 0), 1.0e6);
 dimensionedScalar ampPlt(transportProperties.lookup("ampPlt")); // millon platelet
 
+dimensionedScalar kRate(transportProperties.lookup("kRate")); // kPa rate amplitude at reacting cells
+
+dimensionedScalar lSR(transportProperties.lookup("lowShearRate")); // low shear rate threshold for platelet deposition
+dimensionedScalar lT(transportProperties.lookup("lowResidualTime")); // Residual time at cell for low shear rate
+
 volScalarField RPLT
 (
     IOobject
@@ -375,20 +380,41 @@ volScalarField sPLT
 dimensionedScalar("sPLT", dimensionSet(0, 0, -1, 0, 0, 0, 0), pTraits<scalar>::zero)
 );
 
+volScalarField memoTime
+(
+    IOobject
+    (
+        "memoTime",
+        runTime.timeName(),
+        mesh,
+        IOobject::NO_READ,
+        IOobject::AUTO_WRITE
+    ),
+    mesh,
+    dimensionedScalar("memoTime", dimensionSet(0, 0, 0, 0, 0, 0, 0), pTraits<scalar>::zero)
+);
+
+volScalarField memoShear
+(
+    IOobject
+    (
+        "memoShear",
+        runTime.timeName(),
+        mesh,
+        IOobject::NO_READ,
+        IOobject::AUTO_WRITE
+    ),
+    mesh,
+    dimensionedScalar("memoShear", dimensionSet(0, 0, 0, 0, 0, 0, 0), pTraits<scalar>::zero)
+);
 
 dimensionedScalar cUnit("cUnit", ADP.dimensions(), 1.);
 dimensionedScalar dUnit("dUnit", D_PLT.dimensions(), 1.);
 dimensionedScalar mUnit("mUnit", M.dimensions(), 1.);
 dimensionedScalar jUnit("jUnit", Jr.dimensions(), 1.);
 dimensionedScalar kUnit("kUnit", dimensionSet(0, 0, -1, 0, 0, 0, 0), 1.);
-/*
-set<scalar> internalCells;
-forAll(mesh.internalField(), c_){
-    Info << c_;
-    internalCells.insert(c_);
-}
-Info << "end" << endl;
-*/
+
+
 #include "createRDeltaT.H"
 
 Info<< "Reading field p\n" << endl;
