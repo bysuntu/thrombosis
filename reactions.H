@@ -362,22 +362,32 @@ for (int loop = 0; loop < loopNum; loop++)
     // Update Velocity source term
 
     forAll(mesh.C(), cI){
-        sU[cI] = (faceThrom[cI] > 0.9 * refPLT.value()) * nu[cI] / k_plug.value();
-        if (faceThrom[cI] > 0.9 * refPLT.value())
-            memoShear[cI] = sr[cI];
-
-        // Low Shear Stress memory
+	if (faceThrom[cI] > 0.9 * refPLT.value())
+	{
+        sU[cI] = nu[cI] / k_plug.value();
+	}
+	else
+{
         scalar sr_ = sr[cI];
+
+	if ((sU[cI] > 10000.) && (sr_ < lSR.value() * 10))
+	{
+		memoTime[cI] += runTime.deltaT().value();
+		continue;
+	}
+
         if (sr_ <= lSR.value())
             memoTime[cI] += runTime.deltaT().value();
         else
             memoTime[cI] = 0;
+	
 
-        if ((sr_ <= lSR.value()) && (memoTime[cI] >= lT.value()) && (faceThrom[cI] <= 0.9 * refPLT.value()))
+        if ((sr_ <= lSR.value()) && (memoTime[cI] >= lT.value()) && APLT[cI] > 0.9 * refPLT.value())
         {
             sU[cI] = nu[cI] / k_plug.value();
-            memoShear[cI] = sr[cI];
+            memoShear[cI] = max(memoShear[cI], sr_);
         }
+}
     }
 
 
