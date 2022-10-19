@@ -25,12 +25,12 @@ D_PLT + 0.18*rRBC*rRBC*sr
 volScalarField E_D_ADP
 (
  "E_D_ADP",
-D_ADP + 0.18*rRBC*rRBC*sr
+D_ADP// + 0.18*rRBC*rRBC*sr
  );
 volScalarField E_D_TXA2
 (
  "E_D_TXA2",
-D_TXA2 + 0.18*rRBC*rRBC*sr
+D_TXA2// + 0.18*rRBC*rRBC*sr
  );
 volScalarField E_D_PT
 (
